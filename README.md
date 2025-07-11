@@ -87,13 +87,11 @@ curl -X GET "http://127.0.0.1:8000/complaints/"
 [
   {
     "id": 1,
-    "text": "I'm very disappointed with your service",
     "sentiment": "negative",
     "created_at": "2023-05-15T12:00:00"
   },
   {
     "id": 2,
-    "text": "Great service, thank you!",
     "sentiment": "positive",
     "created_at": "2023-05-15T12:05:00"
   }
