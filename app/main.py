@@ -1,7 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy import and_, select, update
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 import requests
+import json
+from pyngrok import ngrok
+import uvicorn
+import nest_asyncio
+import subprocess
 
 from app.database import get_db, init_db
 from app.models import Complaint
@@ -59,8 +67,36 @@ async def create_complaint(text: str, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
-    
 
+@app.get("/complaints")
+async def get_complaints(status: str = "open", hours: int = 1, db: AsyncSession = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    one_hour_ago = now - timedelta(hours=hours)
+    print(now, one_hour_ago)
+    stmt = select(Complaint).filter(Complaint.timestamp >= one_hour_ago, Complaint.status==status)
+    res = await db.execute(stmt)
+    if not res:
+        raise NoResultFound(detail="Not found")
+    res = [row[0].to_n8n() for row in res.all()]
+    print(res)
+    return res
 
+@app.put("/complaints")
+async def update_complaints(id: int, status: str = "closed", db: AsyncSession = Depends(get_db)):
+    stmt = update(Complaint).where(Complaint.id==id).values(status=status)
+    res = await db.execute(stmt)
+    if not res:
+        raise NoResultFound(detail="Not found")
+    await db.commit()
+    return {"status": "OK"}
 
+result = subprocess.run(
+    ["ngrok", "config", "add-authtoken", settings.NGROK_TOKEN],
+    capture_output=True,
+    text=True
+)
+ngrok_tunnel = ngrok.connect(8000)  # Открываем туннель к порту 8000
+print("Public URL:", ngrok_tunnel.public_url)  # Копируем этот URL для FastAPI
 
+# nest_asyncio.apply()  # Для работы в Colab
+# uvicorn.run(app, host="0.0.0.0", port=8001)  # Запускаем сервер

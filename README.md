@@ -14,32 +14,31 @@ venv\Scripts\activate     # Windows
 ```bash
 pip install -r requirements.txt
 ```
+## Подготовка n8n и модели в Google Colab(локальный вариант)
 
-Пример содержимого requirements.txt:
-```
-fastapi>=0.95.0
-uvicorn>=0.21.0
-sqlalchemy>=2.0.0
-asyncpg>=0.27.0
-requests>=2.28.0
-python-dotenv>=0.21.0
-```
+1. Перед запуском нужно загрузить модель Mistral-7B в Google Colab и создать там апи для взаимодействия с ней. Для этого нужно загрузить и выполнить в Colab блокнот `model.ipynb`. Для установки модели с Hugging Face нужно получить HF_TOKEN и сохранить его в секретах Colab. После выполнения последнего блока блокнота будет вывыдена ngrok-ссылка на публичный API модели, которую нужно запистаь в .env как `NGROK_URL`
+
+2. Импортируйте в n8n файл `Complaint_workflow.json` и настройте каждый шаг со своими данными: ngrok-ссылки на API fastapi-сервера, API модели в Colab, Ссылки на таблицу в Google sheets и телеграм бота для отправки уведомлений
+
+## Настройка переменных окружения
+
+`API_LAYER_TOKEN` - Выдается при регистрации в [apilayer](https://apilayer.com/)
+`HF_TOKEN` - выдается при регистрации в [hugging face](https://huggingface.co/)
+`NGROK_TOKEN`=t1o2k3e4n5
+`NGROK_URL` - ngrok-url, который выводится при создании сервера в последнем блоке кода `model.ipynb`
+
+При настройке шага с телеграм-ботом в n8n нужно создать бота в телеграм с помощью @BotFather и загрузить в конфигурацию шага полученный токен
 
 ## Запуск приложения
 
-1. Создайте файл `.env` в корне проекта с настройками:
-```
-API_LAYER_TOKEN=your_api_layer_key
-SENTIMENT_API_URL=https://api.apilayer.com/sentiment/analysis
-DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
-```
+1. Создайте файл `.env` в корне проекта. Необходимые настройки можно найти в `.env.example`:
 
 2. Запустите сервер:
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --port 8000 --reload
 ```
 
-Приложение будет доступно по адресу: http://127.0.0.1:8000
+Будет выведена публичная ngrok-ссылка, по которой сервис будет доступен
 
 ## Примеры запросов
 
@@ -67,16 +66,13 @@ curl -X POST "http://127.0.0.1:8000/complaints/" \
   "id": 1,
   "text": "I'm very disappointed with your service",
   "sentiment": "negative",
-  "created_at": "2023-05-15T12:00:00"
+  "created_at": "2023-05-15T12:00:00",
+  "status": "open",
+  "category": "Другое"
 }
 ```
 
 ### Получение списка жалоб (GET)
-
-#### cURL:
-```bash
-curl -X GET "http://127.0.0.1:8000/complaints/"
-```
 
 #### Postman:
 1. Метод: GET
@@ -87,14 +83,18 @@ curl -X GET "http://127.0.0.1:8000/complaints/"
 [
   {
     "id": 1,
-    "sentiment": "negative",
-    "created_at": "2023-05-15T12:00:00"
+    "text": "I liked this service",
+    "sentiment": "positive",
+    "date": "2023-05-15T12:00:00",
+    "category": "Другое"
   },
   {
     "id": 2,
-    "sentiment": "positive",
-    "created_at": "2023-05-15T12:05:00"
-  }
+    "text": "I hate this service",
+    "sentiment": "negative",
+    "date": "2023-05-15T12:00:00",
+    "category": "Оплата"
+  },
 ]
 ```
 
