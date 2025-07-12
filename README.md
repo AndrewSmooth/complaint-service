@@ -20,6 +20,8 @@ pip install -r requirements.txt
 
 2. Импортируйте в n8n файл `Complaint_workflow.json` и настройте каждый шаг со своими данными: ngrok-ссылки на API fastapi-сервера, API модели в Colab, Ссылки на таблицу в Google sheets и телеграм бота для отправки уведомлений
 
+![Выполненный n8n workkflow](workflow.png)
+
 ## Настройка переменных окружения
 
 `API_LAYER_TOKEN` - Выдается при регистрации в [apilayer](https://apilayer.com/)
